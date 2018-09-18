@@ -1,0 +1,42 @@
+{
+  "name": "my-node-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "live-server public",
+    "compile": "npx babel src/app.js --watch --out-file public/bundle.js",
+    "dev-server": "webpack-dev-server --hot"
+  },
+  "author": "Julio Ojeda",
+  "license": "ISC",
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "base-64": "^0.1.0",
+    "cleave.js": "^1.4.2",
+    "final-form": "^4.8.3",
+    "informed": "^1.7.4",
+    "live-server": "^1.2.0",
+    "loadash": "^1.0.0",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
+    "react-final-form": "^3.6.4",
+    "react-hot-loader": "^4.3.4",
+    "react-table": "^6.8.6",
+    "webpack": "^3.10.0"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "css-loader": "^1.0.0",
+    "faker": "^4.1.0",
+    "style-loader": "^0.21.0",
+    "webpack-dev-server": "^2.11.1"
+  }
+}

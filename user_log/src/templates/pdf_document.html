@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <style>
+        .images_per_day{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            
+            /* border: 1px solid black; */
+        }
+
+        .user_logs_per_day{
+            display: block;
+            /* border: 1px solid black; */
+            /* width: 625px; */
+            height: auto;
+            margin: 10px auto;
+            /* margin-bottom: 450px; */
+        }
+
+        .blank_space{
+            height: 150px;
+            display: block;
+        }
+
+        .ph{
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-orient: horizontal;
+            -webkit-box-direction: normal;
+            -ms-flex-direction: row;
+            flex-direction: row;
+            -webkit-box-pack: justify;
+            -ms-flex-pack: justify;
+            justify-content: space-between;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+        }
+
+        #pageFooter{
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+        }
+
+        .cover{
+            -webkit-box-orient: vertical;
+            -webkit-box-direction: normal;
+                -ms-flex-direction: column;
+                    flex-direction: column;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            align-content: center;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24px;
+            min-height: 650px;
+            padding-top: 250px;
+
+            align-content: center;
+            align-items: center;
+        }
+
+        .cover_logo{
+            display:block; 
+            width: 200px; 
+        }
+
+        .cover_title{
+            padding: 60px;
+            
+        }
+
+        .page_title{
+            padding: 40px 0;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 22px;
+            font-weight: bold;
+            margin-left: 40px;
+        }
+
+        .logs_of_year{
+            display: block;
+            /* border: 1px solid black; */
+            /* width: 625px; */
+            height: auto;
+            margin: 10px auto;
+            margin-bottom: 450px;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="pageHeader-first"></div>
+    <div id="pageFooter-first"></div>
+    <div id="pageHeader">
+        <div class="ph">
+            <div><img style="display:block; width: 200px;" src="{{header_logo}}"></div>
+            <div>{{date_from_to}}</div>
+        </div>
+    </div>
+
+    <div class="cover">
+        <div><img class="cover_logo" src="{{cover_logo}}"></div>
+        <div class="cover_title">
+            Reporte de actividad de usuarios en el servidor <strong>{{server_name}}</strong> {{date_from_to}}
+        </div>
+    </div>
+
+    
+
+    <div class="page_title">Registro de actividad de usuarios. </div>
+    <img src="{{logs_of_the_week}}"></div>
+    <img src="{{logs_of_the_month}}"></div>
+    <img class="logs_of_year" src="{{logs_of_the_year}}"></div>
+    
+    <div class="page_title">Actividad de usuarios por dia. </div>
+    <div class="images_per_day">
+        {{images_per_day}}
+    </div>
+
+    <div id="pageFooter">
+        <div>Reporte de actividad en <strong>{{server_name}}</strong></div>
+    </div>
+</body>
+</html>

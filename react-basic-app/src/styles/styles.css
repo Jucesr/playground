@@ -1,0 +1,31 @@
+/* // @import './base/setting';
+// @import './base/base';
+// @import './components/button';
+// @import './components/container';
+// @import './components/header';
+// @import './components/widget';
+// @import './components/option';
+// @import './components/add-option';
+// @import './components/_modal'; */
+
+.CustomInput{
+  border: 1px solid rgb(194, 194, 194);
+  margin-bottom: 10px;
+}
+
+.CustomInput_prefix{
+  padding-left: 10px;
+  color: gray;
+}
+
+.CustomInput_input{
+  border: none;
+  padding: 10px 10px 10px 0;
+  color: gray;
+  outline: none;
+}
+
+.CustomInput_input::placeholder {
+    color: gray;
+    opacity: 1;
+}

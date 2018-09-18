@@ -1,0 +1,15 @@
+.PokemonCard{
+  border: 1px solid rgb(184, 184, 184);
+  background: rgb(230, 230, 230);
+  min-width: 150px;
+  align-items: center;
+  display: flex;
+  flex-direction : column;
+
+  margin: 10px;
+}
+
+.PokemonCard:hover{
+  background: #e6ecff;
+  cursor: pointer;
+}

@@ -1,0 +1,22 @@
+{
+  "selected":"normal",
+  "normal":["","",""],
+  "accumulate":["","",""],
+  "language":"ES",
+  "total_en":"MXN",
+  "detail_level":"1",
+  "include_items":"N",
+  "uom":"Y",
+  "quantity":"Y",
+  "ur":"Y",
+  "mxn":"Y",
+  "usd":"Y",
+  "ur_divided":"N",
+  "message":"",
+  "parameters":"N",
+  "print_date":"N",
+  "text_capital":"N",
+  "header_all_pages":"N",
+  "direct":"N",
+  "list": []
+}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>slideUp demo</title>
+  <style>
+ div {
+   margin: 2px;
+  }
+  </style>
+  <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+</head>
+<body>
+
+<div>
+  <button id="btn1">Section 1</button>
+  <button id="btn2">Section 2</button>
+</div>
+
+<div class="catalog" id="section1">
+  <div>Here are the plans for section 1</div>
+  <ul>
+    <li>One</li>
+     <li>dos</li>
+  </ul>
+</div>
+
+<div class="catalog" id="section2">
+  <div>Here are the plans for section 2</div>
+  <ul>
+    <li>One</li>
+     <li>dos</li>
+  </ul>
+</div>
+
+
+<script>
+var catalogs = $('.catalog');
+console.log(catalogs);
+
+$( "#section1" ).hide();
+$( "#section2" ).hide();
+
+function hideAll(current){
+
+  catalogs.each( function(index) {
+    var item = catalogs[index];
+    if($(item).is(":visible") && $(item)[0]!=$(current)[0]){
+      $(item).slideUp( "slow");
+    }
+  });
+}
+
+$( "#btn1" ).click(function() {
+  if( $('#section1').is(':visible') ){
+    hideAll();
+  }else{
+    hideAll($( "#section1" ));
+    $( "#section1" ).slideDown( "slow");
+  }
+
+});
+
+$( "#btn2" ).click(function() {
+  if( $('#section2').is(':visible') ){
+    hideAll();
+  }else{
+  hideAll($( "#section2" ));
+  $( "#section2" ).slideDown( "slow");
+}
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+/react-basic-app/node_modules
+/send_email/node_modules
+/react-boilerplate/node_modules
+/hermosillo-tools/node_modules
+/hermosillo-training/node_modules
+/mongo-test/node_modules
+/pokedex/node_modules
+/user_log/node_modules
+/user_log/build
+/user_log/src/play
+/user_log/src/assets/charts
+/user_log/src/assets/docs
+/user_log/src/config/*

@@ -1,0 +1,50 @@
+.Modal_form{
+  display: flex;
+  flex-direction: column;
+  width: 550px;
+  padding: 20px 50px;
+  background-color: rgb(245, 245, 245);
+  border: 3px solid rgb(240, 240, 240);
+}
+
+
+.Modal_form_section{
+  /* display: flex; */
+  /* flex-direction: row; */
+  width: 100%;
+  margin: 10px 0;
+}
+
+.Modal_form_field_label{
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+.Modal_form_field_input{
+  color: rgb(125, 125, 125);
+  font-weight: bold;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgb(191, 191, 191);
+  border-radius: 5px;
+}
+
+.Modal_form_submit{
+  margin-top: 20px;
+  border: none;
+  background-color: white;
+  font-weight: bold;
+  border: 1px solid rgb(191, 191, 191);
+  border-radius: 50px;
+  color: rgb(125, 125, 125);
+  padding: 10px;
+  width: 100%;
+  transition: 0.3s;
+}
+
+.Modal_form_submit:hover{
+  background-color: rgb(63,197,157);
+  color: white;
+  transition:
+}
