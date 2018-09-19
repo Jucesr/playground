@@ -37,6 +37,10 @@ const generatePDF = (config) => {
             
     })
 
+    //Sort in desendent order.
+    image_files.sort()
+    image_files.reverse()
+
     //  Generates string of tag images
     let fs_assets_folder = path.join('file://', assets_folder)
 
