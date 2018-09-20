@@ -2,32 +2,27 @@ const cmd = require('node-cmd');
 const fs = require('fs');
 const moment = require('moment');
 const path = require('path')
-const {convertConfigFile, validateConfigFile} = require('./utils/helpers')
-const {getUserList} = require('./utils/google')
+const {convertConfigFile, validateConfigFile, getProjectFolder} = require('./utils/helpers')
+const {updateConfigsFromGoogleSheet} = require('./utils/google')
 
-//  Set the path of the project folder base on whether it is executed with nodejs or as an executable
-let project_folder;
-if(process.pkg){
-    //  It is executed with .exe
-    project_folder = path.dirname(process.execPath)
-    
-}else{
-    //  It is executed with nodejs
-    project_folder = __dirname 
-}
 
-//  Get values of configuration file
+const project_folder = getProjectFolder();
+
+//  ------------------------------------------------------------------------------------------------------
+//  Load configuration file (config.json)
+//  ------------------------------------------------------------------------------------------------------
 
 let config
+const secret = convertConfigFile(path.join(project_folder, 'config', 'secret.json'))
 try {
     config = convertConfigFile(path.join(project_folder, 'config', 'config.json'))
-    config = validateConfigFile(config)
+    config = validateConfigFile(config, secret.ENCRYPT_KEY)
 } catch (error) {
     console.log(`Error al cargar archivo de configuración. \n${error}`);
     process.exit(1)
 }
 
-const {DATABASE_OPTIONS} = config;
+const {DATABASE_OPTIONS, GOOGLE_OPTIONS} = config;
 
 //  Database configuration
 const {DB} = require('./utils/db')
@@ -83,28 +78,19 @@ const prepare_user_logs = (rows, roles) => {
     //  Prepara los registros de acuerdo a la tabla en la base de datos.
     return rows.map(row => ({
         username: row.username,
-        role: !!roles[row.username] ? roles[row.username] : 'indefinido',
+        role: !!roles[row.username] ? roles[row.username] : 'Indefinido',
         date: moment().format('YYYY-MM-DD HH:mm')
     }))
 }
 
-//  Updates the user role list
-const user_role_file = path.join(project_folder, 'config', 'user_role.json');
-getUserList(config.GOOGLE_OPTIONS).then(result => {
+//  ------------------------------------------------------------------------------------------------------
+//  Updates user roles and color for charts from google sheet
+//  ------------------------------------------------------------------------------------------------------
 
-    fs.writeFileSync(user_role_file, JSON.stringify(result, null, 2))
-    return Promise.resolve(result)
-}).catch(e => {
-    //  If it fails take the values that are stored in the file.
-    console.log(e);
-    
-    const user_role = convertConfigFile(user_role_file)
-    return Promise.resolve(user_role)
-    
-}).then(user_role => {
-
+updateConfigsFromGoogleSheet(project_folder, GOOGLE_OPTIONS).then(user_role => {
+    //  ------------------------------------------------------------------------------------------------------
     //  Get users that are connected with QUSER
-
+    //  ------------------------------------------------------------------------------------------------------
     cmd.get(
         'quser',
         function(err, userdata, stderr){

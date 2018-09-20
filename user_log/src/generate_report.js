@@ -3,6 +3,7 @@ const path = require('path')
 const uniq = require('lodash/uniq')
 
 moment.locale('ES');
+moment.defaultFormat = "YYYY-MM-DD"
 
 const {
     create_column_chart,
@@ -15,28 +16,23 @@ const {
     isWeekEnd, 
     convertConfigFile,
     validateConfigFile,
-    createThreeDirectory
+    createThreeDirectory,
+    getProjectFolder
 } = require('./utils/helpers')
 
 const {generatePDF} = require('./utils/pdf')
 
-//  Set the path of the project folder base on whether it is executed with nodejs or as an executable
-let project_folder;
-if(process.pkg){
-    //  It is executed with .exe
-    project_folder = path.dirname(process.execPath)
-    
-}else{
-    //  It is executed with nodejs
-    project_folder = __dirname 
-}
+const project_folder = getProjectFolder();
 
-//  Get values of configuration file
+//  ------------------------------------------------------------------------------------------------------
+//  Load configuration file (config.json)
+//  ------------------------------------------------------------------------------------------------------
 
 let config
+const secret = convertConfigFile(path.join(project_folder, 'config', 'secret.json'))
 try {
     config = convertConfigFile(path.join(project_folder, 'config', 'config.json'))
-    config = validateConfigFile(config)
+    config = validateConfigFile(config, secret.ENCRYPT_KEY)
 
 } catch (error) {
     console.log(`Error al cargar archivo de configuración. \n${error}`);
@@ -49,12 +45,14 @@ const {
     DAYLY_REPORT_END_HOUR,
     INCLUDE_WEEKENDS,
     SERVER_NAME,
-    CHART_COLOR_SERIES,
     SHOULD_SEND_EMAIL,
     SHOULD_GENERATE_PDF,
     DATABASE_OPTIONS,
     EMAIL_OPTIONS
 } = config;
+
+//  Chart color series
+const CHART_COLOR_SERIES = convertConfigFile(path.join(project_folder, 'config', 'chart_color.json'))
 
 //  Database configuration
 const {DB} = require('./utils/db')
@@ -72,7 +70,7 @@ const generate_chart_by_hours = (current_day, total_days, folder_path) => {
     //  TODO: Remove recurse function. Not needed anymore
 
     //  Recurse condition. 
-    let target_date = moment(today).subtract(total_days, 'days').format('YYYY-MM-DD')
+    let target_date = moment(today).subtract(total_days, 'days').format()
     
     if( !moment(current_day).isAfter(target_date) ){
         return 0;
@@ -80,11 +78,11 @@ const generate_chart_by_hours = (current_day, total_days, folder_path) => {
     
     //  Skip Weekends if necesary
     if(!INCLUDE_WEEKENDS && isWeekEnd(moment(current_day).format('dddd'))){
-        return generate_chart_by_hours(moment(current_day).subtract(1, 'days').format('YYYY-MM-DD'), total_days)
+        return generate_chart_by_hours(moment(current_day).subtract(1, 'days').format(), total_days, folder_path)
     }
 
-    let sd = moment(current_day).subtract(1, 'days').format('YYYY-MM-DD')
-    let ed = current_day
+    let sd = current_day 
+    let ed = moment(current_day).add(1, 'days').format()
     
 
     let promiseBranch = database.get_users_by_hour(sd, ed).then(results => {
@@ -136,9 +134,9 @@ const generate_chart_by_hours = (current_day, total_days, folder_path) => {
         })
  
     }).then(result => {
-        console.log(`${folder_path}/${current_day} generated.`);
+        console.log(`Se creó ${folder_path}/${current_day}.jpeg`);
         
-        return generate_chart_by_hours(moment(current_day).subtract(1, 'days').format('YYYY-MM-DD'), total_days, folder_path)
+        return generate_chart_by_hours(moment(current_day).subtract(1, 'days').format(), total_days, folder_path)
 
     })
     
@@ -148,9 +146,8 @@ const generate_chart_by_hours = (current_day, total_days, folder_path) => {
 
 const generate_chart_by_days = (start_day, total_days, filename, chart_title) => {
 
-    const date_format = 'YYYY-MM-DD'
     let request = []
-    let target_date = moment(start_day).subtract(total_days, 'days').format(date_format)
+    let target_date = moment(start_day).subtract(total_days, 'days').format()
     let current_day = start_day
 
     //  Get all the roles in the interval
@@ -168,8 +165,8 @@ const generate_chart_by_days = (start_day, total_days, filename, chart_title) =>
         //  Iterates from (Today - X days) to Today
         while(moment(current_day).isAfter(target_date) ){
 
-            let sd = moment(current_day).subtract(1, 'days').format(date_format)
-            let ed = current_day
+            let sd = current_day 
+            let ed = moment(current_day).add(1, 'days').format()
 
             //  Skip Weekends if necesary
             if( !(isWeekEnd(moment(current_day).format('dddd')) && !INCLUDE_WEEKENDS) ){
@@ -183,7 +180,7 @@ const generate_chart_by_days = (start_day, total_days, filename, chart_title) =>
             
             
             // Decrease 1 day
-            current_day = moment(current_day).subtract(1, 'days').format(date_format)
+            current_day = moment(current_day).subtract(1, 'days').format()
         }
         
         //  Get all the request from the request's array
@@ -282,9 +279,12 @@ const generate_chart_by_days = (start_day, total_days, filename, chart_title) =>
 }
 
 const generate_chart_by_months = (start_day, total_months, filename, chart_title) => {
-    const date_format = 'YYYY-MM-DD'
-    let end_date = moment(start_day).subtract(total_months, "months").format(date_format)
     
+    let end_date = moment(start_day).subtract(total_months, "months").format()
+
+    start_day = moment(start_day).add(1, 'day').format()
+    
+    //  Get the list of roles in the inverval. In this way the system will print 0 where there are no users.
     return database.get_user_list(end_date, start_day).then( results => {
         let list_of_roles = results.rows.map(row => {
             return row[1]
@@ -293,6 +293,7 @@ const generate_chart_by_months = (start_day, total_months, filename, chart_title
         list_of_roles = uniq(list_of_roles)
         list_of_roles.sort()
 
+        //  Get all logs in the inverval
         return database.get_users_by_month(end_date, start_day).then(results => {
 
             let data = results.rows.reduce( (current, row) => {
@@ -358,7 +359,7 @@ const generate_chart_by_months = (start_day, total_months, filename, chart_title
 }
 
 //  Global variables
-const today = moment().format('YYYY-MM-DD')
+const today = moment().format()
 const take_up_to_x_previous_days = getDaysToTakeUpTo(RUN_EVERY[0], RUN_EVERY[1])
 
 const days_folder = path.join(project_folder,'/assets','charts','days' )
@@ -397,8 +398,9 @@ Promise.all([p1,p2,p3,p4]).then(results => {
             project_folder: project_folder, 
             filename: `${moment(today).format('YYYY_MM_DD')}`,
             serverName: SERVER_NAME,
-            from: moment(today).subtract(take_up_to_x_previous_days - 1, 'days').format('YYYY-MM-DD'),
-            to: today
+            from: moment(today).subtract(take_up_to_x_previous_days - 1, 'days').format(),
+            to: today,
+            include_weekends: INCLUDE_WEEKENDS
         }) 
     }else{
         return Promise.resolve('PDF NO ha sido generado: Cambie el valor de SHOULD_GENERATE_PDF a true en el archivo de configuración para activar funcionalidad.')
@@ -429,10 +431,10 @@ Promise.all([p1,p2,p3,p4]).then(results => {
 }).catch(error => {
     console.error('Un error ha ocurrido. ', error);
 
-    // mailer.sendMail({
-    //     subject: `[ERROR] Reporte de actividad de usuarios servidor: ${SERVER_NAME}`,
-    //     html: 'No se pudo generar PDF debido al siguiente error \n' + error.toString(),
-    // })
+    mailer.sendMail({
+        subject: `[ERROR] Reporte de actividad de usuarios servidor: ${SERVER_NAME}`,
+        html: 'No se pudo generar PDF debido al siguiente error \n' + error.toString(),
+    })
     
 })
 

@@ -2,8 +2,19 @@ const cmd = require('node-cmd');
 const fs = require('fs');
 const moment = require('moment');
 
-const user_role = require('../../config/user_role.json');
-const {write_user_logs} = require('../utils/db')
+
+const {DB} = require('../utils/db')
+const database = new DB({
+    userName: "sa",
+    password: "1234",
+    server: "localhost",
+    options: {
+      database: "HERMOSILLO_USER_LOG",
+      encrypt: false,
+      connectionTimeout: 60000,
+      requestTimeout: 60000
+    }
+  })
 
 const QUSER_COLUMS = {
     USERNAME: 0,
@@ -15,13 +26,6 @@ const QUSER_COLUMS = {
     LOGON_TIME_HOUR: 6,
     LOGON_TIME_AMPM: 7
 }
-
-// cmd.get(
-//     'quser',
-//     function(err, data, stderr){
-        
-//     }
-// );
 
 const format_user_log_data = input_data => {
     //  Toma como entrada un archivo de texto generado por el comando 'quser'.
@@ -57,6 +61,12 @@ const format_user_log_data = input_data => {
     return user_logs
 }
 
+function getRandomInteger(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
 const prepare_user_logs = (data, rows, ran) => {
     //  Prepara los registros de acuerdo a la tabla en la base de datos.
     rows.map(row => data.push({
@@ -67,25 +77,18 @@ const prepare_user_logs = (data, rows, ran) => {
 
     return data;
 }
+const user_role = require('../config/user_role.json')
+const users = Object.keys(user_role)
 
-const file = fs.readFileSync(`../input_files/users_input.txt`, 'utf8');
-let user_logs = format_user_log_data(file)
-
-//  Elimina usarios inactivos
-user_logs = user_logs.filter(user => user.state == 'Active' && user.idle_time < 60)
-
-
-
-
-let max = Date.parse("January 2017");
-let min = Date.parse("July 2018");
+let max = Date.parse("September 2018");
+let min = Date.parse("October 2018");
 
 let data = []
 
 for (let index = 0; index < 999; index++) {
     
     let ran = getRandomInteger(min, max)
-    let username = user_logs[getRandomInteger(0, 12)].username
+    let username = users[getRandomInteger(0, users.length - 1)]
     data.push({
         username: username,
         role: user_role[username],
@@ -96,23 +99,10 @@ for (let index = 0; index < 999; index++) {
     //data = prepare_user_logs(data, user_logs, ran)
 }
 
-write_user_logs(data)
+database.write_user_logs(data).then(r => {
+    console.log(r);
+    
+})
 
 
-    // setInterval(() => {
-    //     let ran = getRandomInteger(min, max)
 
-    //     //  Prepara registros para insertar a base de datos
-    //     user_logs = prepare_user_logs(user_logs, ran)
-
-    //     //  Escribe los registros en la base de datos
-    //     console.log( moment(ran).format('YYYY-MM-DD HH:mm'));
-    //     write(user_logs)
-    // }, 5000)
-
-
-function getRandomInteger(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min)) + min;
-}

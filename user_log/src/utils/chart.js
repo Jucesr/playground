@@ -60,6 +60,7 @@ const create_column_chart = (configs) => {
 
     chart.yScale().stackMode("value");
     chart.legend().enabled(true);
+    chart.legend().itemsLayout("horizontal-expandable");
     chart.bounds(0, 0, 800, 600);
     chart.title(title)
     chart.container('container');
@@ -125,6 +126,7 @@ const create_bar_chart = (configs) => {
 
   chart.yScale().stackMode("value")
   chart.legend().enabled(true)
+  chart.legend().itemsLayout("horizontal-expandable")
   chart.bounds(0, 0, 800, 600)
   chart.title(title)
   chart.container('container')
