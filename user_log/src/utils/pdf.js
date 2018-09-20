@@ -9,7 +9,7 @@ moment.locale('ES');
 
 const generatePDF = (config) => {
 
-    const {filename, project_folder, serverName, from, to} = config
+    const {filename, project_folder, serverName, from, to, include_weekends} = config
 
     const formated_from = moment(from).format('DD [de] MMMM')
     const formated_to = moment(to).format('DD [de] MMMM')
@@ -29,17 +29,21 @@ const generatePDF = (config) => {
 
     let image_files = fs.readdirSync(`${assets_folder}/charts/days`)
 
-    //  Filter by start date and end date
+    //  Filter by start date, end date and weekends
+    
     image_files = image_files.filter(image => {
         //  Remove .jpeg
         image = image.substring(0, 10)
-        return moment(image).isSameOrAfter(from) && moment(image).isSameOrBefore(to)
-            
+        let weekday = moment(image).weekday()
+        let isWeekEnd =  weekday == 5 || weekday == 6
+        let includeDay = include_weekends ? true : isWeekEnd ? false : true 
+
+        return moment(image).isSameOrAfter(from) && moment(image).isSameOrBefore(to) && includeDay    
     })
 
     //Sort in desendent order.
     image_files.sort()
-    image_files.reverse()
+    image_files.reverse()    
 
     //  Generates string of tag images
     let fs_assets_folder = path.join('file://', assets_folder)

@@ -71,10 +71,6 @@ const validateConfigFile = (config, encrypt_key) => {
             type: 'boolean'    
         },
         {
-            name: 'CHART_COLOR_SERIES',
-            type: 'object'    
-        },
-        {
             name: 'EMAIL_OPTIONS',
             type: 'object'    
         },
@@ -181,11 +177,13 @@ const validateConfigFile = (config, encrypt_key) => {
     config.DATABASE_OPTIONS = {
         userName: cryptr.decrypt(config.DATABASE_OPTIONS.userName),
         password: cryptr.decrypt(config.DATABASE_OPTIONS.password),
-        server: cryptr.decrypt(config.DATABASE_OPTIONS.server)
+        server: cryptr.decrypt(config.DATABASE_OPTIONS.server),
+        options: config.DATABASE_OPTIONS.options
     }
     config.WINDOWS_OPTIONS = {
         username: cryptr.decrypt(config.WINDOWS_OPTIONS.username),
         password: cryptr.decrypt(config.WINDOWS_OPTIONS.password),
+        domain: config.WINDOWS_OPTIONS.domain
     }
 
     
@@ -240,7 +238,7 @@ const create_task = (params) => {
     const cmd = require('node-cmd')
     const path = require('path')
     const fs = require('fs')
-    const {
+    let {
         task_name,
         frequency,
         project_folder,
@@ -258,6 +256,9 @@ const create_task = (params) => {
         }
         //  cmd.exe /k cd "C:\Code\playground\user_log" & node src\play\testgm.js
         //  Prepare the task action
+        if(program_to_run.includes('.js')){
+            program_to_run = `node ${program_to_run}`
+        }
         let task_action = `"cmd.exe /c cd "${project_folder}" & ${program_to_run}"`
 
         let task_cmd_line = `schtasks /Create -tn ${task_name} -sc ${frequency} `
@@ -271,6 +272,38 @@ const create_task = (params) => {
                     reject(err)
                 }
                 resolve(data)      
+            }
+        )
+    })
+}
+
+const verify_windows_credentials = (username, password) => {
+    const cmd = require('node-cmd')
+
+    return new Promise((resolve, reject) => {
+        debugger;
+        let task_name = 'TEST_CREDENTIALS'
+        //  cmd.exe /k cd "C:\Code\playground\user_log" & node src\play\testgm.js
+        //  Prepare the task action
+        let task_action = `notepad.exe`
+
+        let task_cmd_line = `schtasks /Create -tn ${task_name} -sc MONTHLY `
+        task_cmd_line += `-ru ${username} -rp ${password} `
+        task_cmd_line += `-tr ${task_action}`
+        cmd.get(
+            task_cmd_line,
+            function(err, data, stderr){
+                if(err){
+                    reject("Credenciales de Windows no inválidas.")
+                }
+
+                //  If no error delete the task
+                cmd.get(
+                    `schtasks /Delete /F -tn ${task_name}`,
+                    function(err, data, stderr){
+                        resolve(true)      
+                    }
+                )    
             }
         )
     })
@@ -299,6 +332,22 @@ const isYes = (answer) => {
     return answer == 's' || answer == 'si'
 }
 
+const getProjectFolder = () => {
+    const path = require('path')
+    //  Set the path of the project folder base on whether it is executed with nodejs or as an executable
+    let project_folder;
+    if(process.pkg){
+        //  It is executed with .exe
+        project_folder = path.dirname(process.execPath)
+        
+    }else{
+        //  It is executed with nodejs
+        project_folder = path.join(__dirname, '..') 
+    }
+
+    return project_folder
+}
+
 module.exports = {
     replaceAll,
     getDaysToTakeUpTo,
@@ -309,5 +358,7 @@ module.exports = {
     create_task,
     remove_task,
     makeQuestion,
-    isYes
+    isYes,
+    getProjectFolder,
+    verify_windows_credentials
 }
