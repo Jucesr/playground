@@ -2,9 +2,9 @@ const cmd = require('node-cmd');
 const fs = require('fs');
 const moment = require('moment');
 const path = require('path')
-const {convertConfigFile, validateConfigFile, getProjectFolder} = require('./utils/helpers')
+const {parseJsonFile, validateConfigObject, getProjectFolder, decryptConfigObject} = require('./utils/helpers')
 const {updateConfigsFromGoogleSheet} = require('./utils/google')
-
+const Cryptr = require('cryptr')
 
 const project_folder = getProjectFolder();
 
@@ -13,10 +13,12 @@ const project_folder = getProjectFolder();
 //  ------------------------------------------------------------------------------------------------------
 
 let config
-const secret = convertConfigFile(path.join(project_folder, 'config', 'secret.json'))
+const secret = parseJsonFile(path.join(project_folder, 'config', 'secret.json'))
+const cryptr = new Cryptr(secret.ENCRYPT_KEY);
 try {
-    config = convertConfigFile(path.join(project_folder, 'config', 'config.json'))
-    config = validateConfigFile(config, secret.ENCRYPT_KEY)
+    config = parseJsonFile(path.join(project_folder, 'config', 'config.json'))
+    config = decryptConfigObject(config, cryptr)
+    validateConfigObject(config)
 } catch (error) {
     console.log(`Error al cargar archivo de configuración. \n${error}`);
     process.exit(1)

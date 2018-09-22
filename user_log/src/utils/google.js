@@ -66,7 +66,7 @@ const getChartColors = (options) => {
 }
 
 const updateConfigsFromGoogleSheet = (project_folder, options) => {
-  const {convertConfigFile} = require('./helpers')
+  const {parseJsonFile} = require('./helpers')
   const user_role_file = path.join(project_folder, 'config', 'user_role.json');
   const chart_color_file = path.join(project_folder, 'config', 'chart_color.json');
 
@@ -85,7 +85,7 @@ const updateConfigsFromGoogleSheet = (project_folder, options) => {
     //  If it fails take the values that are stored in the file.
     console.log(e);
     
-    const user_role = convertConfigFile(user_role_file)
+    const user_role = parseJsonFile(user_role_file)
     return Promise.resolve(user_role)   
 })
 }

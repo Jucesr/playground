@@ -257,7 +257,7 @@ async function createConfigurationFile(path, secret, cryptr) {
                 SERVER_NAME: server_name,
                 RUN_EVERY: run_every,
                 DAYLY_REPORT_START_HOUR: 8,
-                DAYLY_REPORT_END_HOUR: 18,
+                DAYLY_REPORT_END_HOUR: 20,
                 INCLUDE_WEEKENDS: isYes(include_weekend),
                 GENERATE_REPORT_WHEN_RUN: true,
                 SHOULD_SEND_EMAIL: true,
@@ -316,6 +316,7 @@ async function createDatabase(project_folder, database ) {
     let query_createTable = fs.readFileSync(path.join(project_folder, 'queries','createTable.sql')).toString();
     
     console.log('Verificando base de datos....');
+    
     
     const r_database  = await database.executeQuery(query_checkifExist)
 
@@ -456,7 +457,7 @@ async function main(params) {
     //  ------------------------------------------------------------------------------------------------------
     
     const database = new DB(DATABASE_OPTIONS)
-   
+    
     await createDatabase(project_folder, database)
 
     //  ------------------------------------------------------------------------------------------------------
@@ -583,6 +584,27 @@ async function main(params) {
                 console.log(`Nombre de usuario: ${wun}`);
 
             break;
+
+            case '7':
+                console.log('Eliminará archivos de configuración, base de datos, tareas de windows y terminará con la ejecución del programa.');
+                console.log('Los archivos ejecutables no se eliminarán.');
+                let answer = makeQuestion({
+                    message: '¿Desea continuar? (S/N): '
+                })
+
+                if(isYes(answer)){
+                    //  Delete config file.
+                    fs.unlinkSync(config_file)
+
+                    //  Delete data base.
+                    await database.executeQuery('DROP DATABASE HERMOSILLO_USER_LOG')
+
+                    //  Delete windows task.
+                    await remove_task('Hermosillo_save_logs')
+                    await remove_task('Hermosillo_generate_report')
+                    opc = 8;
+                }
+            break;
             default:
                 break;
         }
@@ -593,13 +615,6 @@ async function main(params) {
             allowNull: true
         })
     }
-    
-
-
-
-
-
-    //await createTasks(project_folder, RUN_EVERY, new Email(EMAIL_OPTIONS), WINDOWS_OPTIONS)
 
 }
 
@@ -608,6 +623,9 @@ main().then(r => {
     
 }).catch(e => {
     console.log(`[Error]: ${e}`)
+    makeQuestion({
+        message: 'Presione cualquier tecla para continuar...'
+    })
     process.exit(1)
 });
 

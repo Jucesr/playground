@@ -9,6 +9,23 @@ class DB {
         this.query_folder = path.join(__dirname, '../queries')
     }
 
+    checkConnection(){
+        const connection = new Connection(this.connectionOptions);
+        
+        return new Promise( (resolve, reject) => {
+            connection.on('connect', function(err) {
+                if (err) {
+                    connection.close()
+                    reject(err);
+                } else {
+                    connection.close()
+                    resolve()
+                }
+            })
+        } )
+            
+    }
+
     executeQuery(query){
 
         //  If succeed, returns an object with 2 properties.

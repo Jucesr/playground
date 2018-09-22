@@ -1,6 +1,7 @@
 const moment = require('moment')
 const path = require('path')
 const uniq = require('lodash/uniq')
+const Cryptr = require('cryptr')
 
 moment.locale('ES');
 moment.defaultFormat = "YYYY-MM-DD"
@@ -14,9 +15,10 @@ const {
     replaceAll, 
     getDaysToTakeUpTo, 
     isWeekEnd, 
-    convertConfigFile,
-    validateConfigFile,
+    parseJsonFile,
+    validateConfigObject,
     createThreeDirectory,
+    decryptConfigObject,
     getProjectFolder
 } = require('./utils/helpers')
 
@@ -29,10 +31,12 @@ const project_folder = getProjectFolder();
 //  ------------------------------------------------------------------------------------------------------
 
 let config
-const secret = convertConfigFile(path.join(project_folder, 'config', 'secret.json'))
+const secret = parseJsonFile(path.join(project_folder, 'config', 'secret.json'))
+const cryptr = new Cryptr(secret.ENCRYPT_KEY);
 try {
-    config = convertConfigFile(path.join(project_folder, 'config', 'config.json'))
-    config = validateConfigFile(config, secret.ENCRYPT_KEY)
+    config = parseJsonFile(path.join(project_folder, 'config', 'config.json'))
+    config = decryptConfigObject(config, cryptr)
+    validateConfigObject(config)
 
 } catch (error) {
     console.log(`Error al cargar archivo de configuración. \n${error}`);
@@ -52,7 +56,7 @@ const {
 } = config;
 
 //  Chart color series
-const CHART_COLOR_SERIES = convertConfigFile(path.join(project_folder, 'config', 'chart_color.json'))
+const CHART_COLOR_SERIES = parseJsonFile(path.join(project_folder, 'config', 'chart_color.json'))
 
 //  Database configuration
 const {DB} = require('./utils/db')

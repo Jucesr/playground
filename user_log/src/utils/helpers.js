@@ -1,3 +1,9 @@
+const fs = require('fs')
+const path = require('path')
+const cmd = require('node-cmd')
+const readline = require('readline-sync')
+const moment = require('moment')
+
 const replaceAll = (target, search, replacement) => {
     return target.replace(new RegExp(search, "g"), replacement)
 }
@@ -32,11 +38,9 @@ const isEmail = (email) => {
     return re.test(String(email).toLowerCase());
 }
 
-const validateConfigFile = (config, encrypt_key) => {
+const validateConfigObject = (config) => {
     //  Check the config object has all the values and the rigth type.
-    // Decrypt passwords.
-    const Cryptr = require('cryptr');
-    const cryptr = new Cryptr(encrypt_key);
+    
     let required_properties = [
         {
             name: 'SERVER_NAME',
@@ -133,12 +137,6 @@ const validateConfigFile = (config, encrypt_key) => {
 
     // EMAIL_OPTIONS
 
-    config.EMAIL_OPTIONS = {
-        sender_email: cryptr.decrypt(config.EMAIL_OPTIONS.sender_email),
-        sender_password: cryptr.decrypt(config.EMAIL_OPTIONS.sender_password),
-        receiver_email: cryptr.decrypt(config.EMAIL_OPTIONS.receiver_email)
-    }
-    
     let eo = config["EMAIL_OPTIONS"]
     
     if(!eo.hasOwnProperty('sender_email') || !isEmail(eo.sender_email)){
@@ -172,26 +170,68 @@ const validateConfigFile = (config, encrypt_key) => {
         throw "La propiedad DATABASE_OPTIONS.options debe contener database."
     }
 
-    
-    
-    config.DATABASE_OPTIONS = {
-        userName: cryptr.decrypt(config.DATABASE_OPTIONS.userName),
-        password: cryptr.decrypt(config.DATABASE_OPTIONS.password),
-        server: cryptr.decrypt(config.DATABASE_OPTIONS.server),
-        options: config.DATABASE_OPTIONS.options
-    }
-    config.WINDOWS_OPTIONS = {
-        username: cryptr.decrypt(config.WINDOWS_OPTIONS.username),
-        password: cryptr.decrypt(config.WINDOWS_OPTIONS.password),
-        domain: config.WINDOWS_OPTIONS.domain
-    }
+    return true
+}
 
+const decryptConfigObject = (config, cryptr) => {
+
+    try {
+        config.EMAIL_OPTIONS = {
+            sender_email: cryptr.decrypt(config.EMAIL_OPTIONS.sender_email),
+            sender_password: cryptr.decrypt(config.EMAIL_OPTIONS.sender_password),
+            receiver_email: cryptr.decrypt(config.EMAIL_OPTIONS.receiver_email)
+        }
+        
+        config.DATABASE_OPTIONS = {
+            userName: cryptr.decrypt(config.DATABASE_OPTIONS.userName),
+            domain: config.DATABASE_OPTIONS.domain,
+            password: cryptr.decrypt(config.DATABASE_OPTIONS.password),
+            server: cryptr.decrypt(config.DATABASE_OPTIONS.server),
+            options: config.DATABASE_OPTIONS.options
+        }
+        config.WINDOWS_OPTIONS = {
+            username: cryptr.decrypt(config.WINDOWS_OPTIONS.username),
+            password: cryptr.decrypt(config.WINDOWS_OPTIONS.password),
+            domain: config.WINDOWS_OPTIONS.domain
+        }  
+    } catch (error) {
+        throw "No fue posible desencriptar."
+    }
     
+
     return config
 }
 
-const convertConfigFile = (path) => {
-    const fs = require('fs')
+const clearScreen = () => {
+    console.log('\033[2J');
+}
+
+const encryptConfigObject = (config, cryptr) => {
+
+    config.EMAIL_OPTIONS = {
+        sender_email: cryptr.encrypt(config.EMAIL_OPTIONS.sender_email),
+        sender_password: cryptr.encrypt(config.EMAIL_OPTIONS.sender_password),
+        receiver_email: cryptr.encrypt(config.EMAIL_OPTIONS.receiver_email)
+    }
+    
+    config.DATABASE_OPTIONS = {
+        userName: cryptr.encrypt(config.DATABASE_OPTIONS.userName),
+        domain: config.DATABASE_OPTIONS.domain,
+        password: cryptr.encrypt(config.DATABASE_OPTIONS.password),
+        server: cryptr.encrypt(config.DATABASE_OPTIONS.server),
+        options: config.DATABASE_OPTIONS.options
+    }
+    config.WINDOWS_OPTIONS = {
+        username: cryptr.encrypt(config.WINDOWS_OPTIONS.username),
+        password: cryptr.encrypt(config.WINDOWS_OPTIONS.password),
+        domain: config.WINDOWS_OPTIONS.domain
+    }
+
+    return config
+}
+
+const parseJsonFile = (path) => {
+    
 
     let content, config
     try {
@@ -203,7 +243,7 @@ const convertConfigFile = (path) => {
     try {
         config = JSON.parse(content)
     } catch (error) {
-        throw `El archivo de configuración '${path}' tiene un formato inválido.\nPuede verificar el formato en la página https://jsonformatter.curiousconcept.com/`
+        throw `El archivo de configuración '${path}' tiene un formato inválido.`
     }
 
     return config;
@@ -211,7 +251,7 @@ const convertConfigFile = (path) => {
 }
 
 const createThreeDirectory = (assetsPath) => {
-    const fs = require('fs')
+    
 
     if (!fs.existsSync(assetsPath)){
         fs.mkdirSync(assetsPath)
@@ -235,10 +275,10 @@ const createThreeDirectory = (assetsPath) => {
 }
 
 const create_task = (params) => {
-    const cmd = require('node-cmd')
-    const path = require('path')
-    const fs = require('fs')
+
     let {
+        start_date,
+        days,
         task_name,
         frequency,
         project_folder,
@@ -259,10 +299,16 @@ const create_task = (params) => {
         if(program_to_run.includes('.js')){
             program_to_run = `node ${program_to_run}`
         }
-        let task_action = `"cmd.exe /c cd "${project_folder}" & ${program_to_run}"`
+        let task_action = `"cmd.exe /c cd \\"${project_folder}\\" & ${program_to_run}"`
+
+        if(frequency == 'MONTHLY'){
+            days = moment().format('DD')
+        }
 
         let task_cmd_line = `schtasks /Create -tn ${task_name} -sc ${frequency} `
         task_cmd_line += `${!!modifier ? `-mo ${modifier} ` : ''}`
+        task_cmd_line += `${!!start_date ? `-sd ${start_date} ` : ''}`
+        task_cmd_line += `${!!days ? `-d ${days} ` : ''}`
         task_cmd_line += `${!!username ? `-ru ${username} -rp ${password} ` : ''}`
         task_cmd_line += `-tr ${task_action}`
         cmd.get(
@@ -278,10 +324,10 @@ const create_task = (params) => {
 }
 
 const verify_windows_credentials = (username, password) => {
-    const cmd = require('node-cmd')
+    
 
     return new Promise((resolve, reject) => {
-        debugger;
+
         let task_name = 'TEST_CREDENTIALS'
         //  cmd.exe /k cd "C:\Code\playground\user_log" & node src\play\testgm.js
         //  Prepare the task action
@@ -310,7 +356,7 @@ const verify_windows_credentials = (username, password) => {
 }
 
 const remove_task = (task_name) => {
-    const cmd = require('node-cmd')
+    
     return new Promise((resolve, reject) => {
         cmd.get(
             `schtasks /Delete /F -tn ${task_name}`,
@@ -321,10 +367,57 @@ const remove_task = (task_name) => {
     })
 }
 
-const makeQuestion = (question, options) => {
-    const readline = require('readline-sync')
-    process.stdout.write(question);
-    return readline.question(null, options)
+const makeQuestion = (options) => {
+    
+    const {
+        message,
+        validation,
+        isPassword = false,
+        allowNull = false
+    } = options;
+
+    let isValueIncorrect = true
+    let value
+    let validationMessage;
+
+    while (isValueIncorrect) {
+        process.stdout.write(`- ${message}`)
+        value = readline.question(null, {
+            hideEchoBack: isPassword
+        })
+
+        let isEmpty = !allowNull && (value.length == 0 || value == '\n')
+
+        if(!!validation){
+            try {
+                validation(value)
+                isInvalid = false
+            } catch (error) {
+                validationMessage = error
+                isInvalid = true
+            }
+            
+        }else{
+            isInvalid = false
+        }
+
+        if( isEmpty || isInvalid ){
+
+            if(isEmpty){
+                console.log('\nError: Debe ingresar algún valor.\n');
+            }
+
+            if(isInvalid){
+                console.log(`\nError: ${validationMessage}.\n`);
+            }
+
+            isValueIncorrect = true
+        }else{
+            isValueIncorrect = false
+        }
+    }
+    
+    return value
 }   
 
 const isYes = (answer) => {
@@ -333,7 +426,7 @@ const isYes = (answer) => {
 }
 
 const getProjectFolder = () => {
-    const path = require('path')
+    
     //  Set the path of the project folder base on whether it is executed with nodejs or as an executable
     let project_folder;
     if(process.pkg){
@@ -352,13 +445,17 @@ module.exports = {
     replaceAll,
     getDaysToTakeUpTo,
     isWeekEnd,
-    convertConfigFile,
-    validateConfigFile,
+    parseJsonFile,
+    encryptConfigObject,
+    decryptConfigObject,
+    validateConfigObject,
     createThreeDirectory,
     create_task,
     remove_task,
     makeQuestion,
     isYes,
+    isEmail,
     getProjectFolder,
-    verify_windows_credentials
+    verify_windows_credentials,
+    clearScreen
 }
