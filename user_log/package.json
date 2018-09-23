@@ -21,6 +21,7 @@
     "node-cmd": "^3.0.0",
     "nodemailer": "^4.4.1",
     "readline-sync": "^1.4.9",
+    "rimraf": "^2.6.2",
     "tedious": "^2.6.4"
   },
   "pkg": {

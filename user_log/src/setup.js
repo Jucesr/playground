@@ -1,4 +1,5 @@
 const path = require('path')
+const cmd = require('node-cmd')
 const fs = require('fs')
 const Cryptr = require('cryptr');
 const moment = require('moment')
@@ -396,6 +397,27 @@ async function createGenerateReportTask(project_folder, RUN_EVERY, WINDOWS_OPTIO
     console.log(`\nRecibirás el primer reporte el dia ${target_day}.`);  
 }
 
+async function runTask(project_folder, taskName) {
+    let command;
+    if(process.pkg){
+        command = `cd "${project_folder}" & ${taskName}.exe`
+    }else{
+        command = `node ${path.join(project_folder, `${taskName}.js`)}`
+    }
+
+    await new Promise((resolve, reject) => {
+        cmd.get(
+            command,
+            function(err, data, stderr){
+                if(err){
+                    reject(err)
+                }
+                resolve(data)      
+            }
+        )
+    })    
+}
+
 function saveConfigObject(path, config, cryptr) {
     validateConfigObject(config)
     let configEncrypt = JSON.parse(JSON.stringify(config))
@@ -467,20 +489,32 @@ async function main(params) {
     await createSaveLogsTask(project_folder, WINDOWS_OPTIONS)
 
     //  ------------------------------------------------------------------------------------------------------
+    //  Run task to test everything would work
+    //  ------------------------------------------------------------------------------------------------------
+
+    console.log('\nProbando tareas...\n');
+    
+
+    await runTask(project_folder, 'save_logs')
+    //await runTask('generate_report')
+
+    //  ------------------------------------------------------------------------------------------------------
     //  Display menu
     //  ------------------------------------------------------------------------------------------------------
     let opc = 0
-    while (opc != 8) {
+    const exitOpcion = 9
+    while (opc != exitOpcion) {
         clearScreen()
         console.log('\n------Menu de opciones------\n');
-        console.log('[1] Programar envio de reporte.');
-        console.log('[2] Eliminar programación de reporte.');
-        console.log('[3] Modificar parámetros de correo.');
-        console.log('[4] Modificar parámetros de base de datos.');
-        console.log('[5] Modificar parámetros de Windows.');
-        console.log('[6] Información general.');
-        console.log('[7] Desinstalar.');
-        console.log('[8] Salir.');
+        console.log('[1] Información general.');
+        console.log('[2] Enviar reporte.');
+        console.log('[3] Programar envió de reporte.');
+        console.log('[4] Eliminar programación de reporte.');
+        console.log('[5] Modificar parámetros de correo.');
+        console.log('[6] Modificar parámetros de base de datos.');
+        console.log('[7] Modificar parámetros de Windows.');
+        console.log('[8] Desinstalar.');
+        console.log(`[${exitOpcion}] Salir.`);
         opc = makeQuestion({
             message: 'Ingrese una opcion: '
         })
@@ -489,69 +523,6 @@ async function main(params) {
 
         switch (opc) {
             case '1':
-                let shouldAsk = makeQuestion({
-                    message: '¿Desea usar los datos del archivo de configuracion?: (S/N) '
-                })
-                
-                if(!isYes(shouldAsk)){
-
-                    let {server_name, run_every, include_weekend} = await readGeneralData()
-                    config.SERVER_NAME = server_name
-                    config.RUN_EVERY = run_every
-                    config.INCLUDE_WEEKENDS = isYes(include_weekend)
-
-                    saveConfigObject(config_file, config, cryptr)
-                }
-
-                await createGenerateReportTask(project_folder, config.RUN_EVERY, WINDOWS_OPTIONS)
-
-
-            break;
-
-            case '2':
-                await remove_task('Hermosillo_generate_report')
-                console.log('No recibirás mas correos con el reporte');
-                
-            break;
-
-            case '3':
-                let {sender_email, sender_password, receiver_email} = await readEmailData()
-                config.EMAIL_OPTIONS.sender_email = sender_email
-                config.EMAIL_OPTIONS.sender_password = sender_password
-                config.EMAIL_OPTIONS.receiver_email = receiver_email
-
-                saveConfigObject(config_file, config, cryptr)
-
-                console.log('Se han actualizado los parámetros de correo.');
-                
-            break;
-
-            case '4':
-                let {db_server, db_user, db_password} = await readDBData(config.WINDOWS_OPTIONS.admin_domain, config.WINDOWS_OPTIONSadmin_user, config.WINDOWS_OPTIONSadmin_password)
-                config.DATABASE_OPTIONS.db_server = db_server
-                config.DATABASE_OPTIONS.db_user = db_user
-                config.DATABASE_OPTIONS.db_password = db_password
-
-                saveConfigObject(config_file, config, cryptr)
-
-                console.log('Se han actualizado los parámetros de base de datos.');
-                
-            break;
-
-            case '5':
-                let {admin_domain, admin_user, admin_password} = await readAdminData()
-                
-                config.WINDOWS_OPTIONS.admin_domain = admin_domain
-                config.WINDOWS_OPTIONS.admin_user = admin_user
-                config.WINDOWS_OPTIONS.admin_password = admin_password
-
-                saveConfigObject(config_file, config, cryptr)
-
-                console.log('Se han actualizado los parámetros de Windows.');
-                
-            break;
-
-            case '6':
                 console.log('\n-----Información general-----\n');
                 let {SERVER_NAME, RUN_EVERY, INCLUDE_WEEKENDS} = config
                 console.log(`Nombre del servidor: ${SERVER_NAME}`);
@@ -585,7 +556,79 @@ async function main(params) {
 
             break;
 
+            case '2':
+                console.log('\nEnviando reporte....\n');
+
+                await runTask(project_folder, 'generate_report')
+                
+                console.log('Reporte generado y enviado.');
+                
+            break;
+
+            case '3':
+                let shouldAsk = makeQuestion({
+                    message: '¿Desea usar los datos del archivo de configuracion?: (S/N) '
+                })
+                
+                if(!isYes(shouldAsk)){
+
+                    let {server_name, run_every, include_weekend} = await readGeneralData()
+                    config.SERVER_NAME = server_name
+                    config.RUN_EVERY = run_every
+                    config.INCLUDE_WEEKENDS = isYes(include_weekend)
+
+                    saveConfigObject(config_file, config, cryptr)
+                }
+
+                await createGenerateReportTask(project_folder, config.RUN_EVERY, WINDOWS_OPTIONS)
+
+
+            break;
+
+            case '4':
+                await remove_task('Hermosillo_generate_report')
+                console.log('No recibirás mas correos con el reporte');
+                
+            break;
+
+            case '5':
+                let {sender_email, sender_password, receiver_email} = await readEmailData()
+                config.EMAIL_OPTIONS.sender_email = sender_email
+                config.EMAIL_OPTIONS.sender_password = sender_password
+                config.EMAIL_OPTIONS.receiver_email = receiver_email
+
+                saveConfigObject(config_file, config, cryptr)
+
+                console.log('Se han actualizado los parámetros de correo.');
+                
+            break;
+
+            case '6':
+                let {db_server, db_user, db_password} = await readDBData(config.WINDOWS_OPTIONS.admin_domain, config.WINDOWS_OPTIONSadmin_user, config.WINDOWS_OPTIONSadmin_password)
+                config.DATABASE_OPTIONS.db_server = db_server
+                config.DATABASE_OPTIONS.db_user = db_user
+                config.DATABASE_OPTIONS.db_password = db_password
+
+                saveConfigObject(config_file, config, cryptr)
+
+                console.log('Se han actualizado los parámetros de base de datos.');
+                
+            break;
+
             case '7':
+                let {admin_domain, admin_user, admin_password} = await readAdminData()
+                
+                config.WINDOWS_OPTIONS.admin_domain = admin_domain
+                config.WINDOWS_OPTIONS.admin_user = admin_user
+                config.WINDOWS_OPTIONS.admin_password = admin_password
+
+                saveConfigObject(config_file, config, cryptr)
+
+                console.log('Se han actualizado los parámetros de Windows.');
+                
+            break;
+
+            case '8':
                 console.log('Eliminará archivos de configuración, base de datos, tareas de windows y terminará con la ejecución del programa.');
                 console.log('Los archivos ejecutables no se eliminarán.');
                 let answer = makeQuestion({
@@ -602,7 +645,9 @@ async function main(params) {
                     //  Delete windows task.
                     await remove_task('Hermosillo_save_logs')
                     await remove_task('Hermosillo_generate_report')
-                    opc = 8;
+                    
+
+                    opc = exitOpcion;
                 }
             break;
             default:
@@ -624,7 +669,8 @@ main().then(r => {
 }).catch(e => {
     console.log(`[Error]: ${e}`)
     makeQuestion({
-        message: 'Presione cualquier tecla para continuar...'
+        message: 'Presione Enter para salir...',
+        allowNull: true
     })
     process.exit(1)
 });

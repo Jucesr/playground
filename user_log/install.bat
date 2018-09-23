@@ -1,9 +1,10 @@
 @echo off
-set currentpath=%cd%
+set currentpath=%~dp0
+set buildpath=%currentpath%build
 
 mkdir "C:\Program Files\HermosilloUserLog"
 mkdir "C:\Program Files\HermosilloUserLog\assets"
-xcopy "build" "C:\Program Files\HermosilloUserLog" /s /e
+xcopy %buildpath% "C:\Program Files\HermosilloUserLog" /s /e
 cd "C:\Program Files\HermosilloUserLog"
 
 FOR /F "usebackq delims=" %%i in (`cscript find.vbs`) DO SET DESKTOPDIR=%%i
