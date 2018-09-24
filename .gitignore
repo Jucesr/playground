@@ -11,3 +11,4 @@
 /user_log/src/assets/charts
 /user_log/src/assets/docs
 /user_log/src/config/*
+/electron-app/node_modules
