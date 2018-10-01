@@ -154,6 +154,8 @@ const generate_chart_by_days = (start_day, total_days, filename, chart_title) =>
     let target_date = moment(start_day).subtract(total_days, 'days').format()
     let current_day = start_day
 
+    start_day = moment(start_day).add(1, 'days').format()
+
     //  Get all the roles in the interval
 
     return database.get_user_list(target_date, start_day).then( results => {
